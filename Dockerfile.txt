@@ -1,0 +1,32 @@
+# ใช้ Node.js สำหรับ build Vite
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# คัดลอกไฟล์ package ก่อน
+COPY package*.json ./
+
+# ติดตั้ง dependencies
+RUN npm ci
+
+# คัดลอก source code
+COPY . .
+
+# Build frontend
+RUN npm run build
+
+
+# ใช้ Nginx สำหรับรันเว็บ
+FROM nginx:alpine
+
+# ลบไฟล์ default ของ nginx
+RUN rm -rf /usr/share/nginx/html/*
+
+# เอาไฟล์ที่ build แล้วมาใส่ nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# เปิด port 80
+EXPOSE 80
+
+# เริ่ม nginx
+CMD ["nginx", "-g", "daemon off;"]
